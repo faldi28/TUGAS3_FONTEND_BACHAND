@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Penjualan Sepatu</title>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="p-6 bg-gray-100">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <h1 class="mb-6 text-2xl font-bold text-center">Penjualan Sepatu Olahraga</h1>
+
+    <!-- Table Section -->
+    <div class="overflow-hidden bg-white rounded-lg shadow-md">
+      <table class="w-full table-auto">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="px-4 py-2">ID</th>
+            <th class="px-4 py-2">Merk</th>
+            <th class="px-4 py-2">Jenis</th>
+            <th class="px-4 py-2">Ukuran</th>
+            <th class="px-4 py-2">Harga</th>
+            <th class="px-4 py-2">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="sepatu-table">
+          <!-- Data will be dynamically loaded here -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Add Button -->
+    <div class="mt-4">
+      <button onclick="openForm('Tambah')" class="px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-700">
+        Tambah Sepatu
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Form -->
+  <div id="form-modal" class="fixed inset-0 flex items-center justify-center hidden bg-gray-800 bg-opacity-50">
+    <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
+      <h2 id="form-title" class="mb-4 text-xl font-bold">Tambah Sepatu</h2>
+      <form id="sepatu-form">
+        <input type="hidden" id="sepatu-id">
+
+        <!-- Merk Input -->
+        <div class="mb-4">
+          <label for="merk" class="block text-gray-700">Merk</label>
+          <input id="merk" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+        </div>
+
+        <!-- Jenis Input -->
+        <div class="mb-4">
+          <label for="jenis" class="block text-gray-700">Jenis</label>
+          <input id="jenis" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+        </div>
+
+        <!-- Ukuran Input -->
+        <div class="mb-4">
+          <label for="ukuran" class="block text-gray-700">Ukuran</label>
+          <input id="ukuran" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" required>
+        </div>
+
+        <!-- Harga Input -->
+        <div class="mb-4">
+          <label for="harga" class="block text-gray-700">Harga</label>
+          <input id="harga" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" required>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex justify-end">
+          <button type="button" onclick="closeForm()" class="px-4 py-2 mr-2 text-white bg-gray-500 rounded-md">
+            Batal
+          </button>
+          <button type="submit" class="px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-700">
+            Simpan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:8080/sepatu";
+
+    // Load data on page load
+    window.onload = loadSepatu;
+
+    function showError(message) {
+      alert(`Error: ${message}`);
+    }
+
+    async function loadSepatu() {
+      try {
+        const response = await axios.get(API_URL);
+        const sepatuTable = document.getElementById('sepatu-table');
+        sepatuTable.innerHTML = '';
+        response.data.forEach(sepatu => {
+          sepatuTable.innerHTML += `
+            <tr>
+              <td class="px-4 py-2 border">${sepatu.id}</td>
+              <td class="px-4 py-2 border">${sepatu.merk}</td>
+              <td class="px-4 py-2 border">${sepatu.jenis}</td>
+              <td class="px-4 py-2 border">${sepatu.ukuran}</td>
+              <td class="px-4 py-2 border">${sepatu.harga}</td>
+              <td class="px-4 py-2 text-center border">
+                <button onclick="editSepatu(${sepatu.id})" class="px-2 py-1 text-white bg-yellow-500 rounded hover:bg-yellow-700">Edit</button>
+                <button onclick="deleteSepatu(${sepatu.id})" class="px-2 py-1 text-white bg-red-500 rounded hover:bg-red-700">Hapus</button>
+              </td>
+            </tr>`;
+        });
+      } catch (error) {
+        showError("Gagal memuat data");
+      }
+    }
+
+    function openForm(mode, id = null) {
+      const modal = document.getElementById('form-modal');
+      const form = document.getElementById('sepatu-form');
+      const title = document.getElementById('form-title');
+
+      modal.classList.remove('hidden');
+      title.textContent = `${mode} Sepatu`;
+      form.reset();
+
+      if (mode === 'Edit' && id) {
+        axios.get(`${API_URL}/${id}`)
+          .then(response => {
+            const { merk, jenis, ukuran, harga } = response.data;
+            document.getElementById('sepatu-id').value = id;
+            document.getElementById('merk').value = merk;
+            document.getElementById('jenis').value = jenis;
+            document.getElementById('ukuran').value = ukuran;
+            document.getElementById('harga').value = harga;
+          })
+          .catch(() => showError('Gagal memuat data sepatu untuk di edit.'));
+      }
+    }
+
+    function closeForm() {
+      document.getElementById('form-modal').classList.add('hidden');
+    }
+
+    document.getElementById('sepatu-form').onsubmit = async function (event) {
+      event.preventDefault();
+
+      const id = document.getElementById('sepatu-id').value;
+      const sepatu = {
+        merk: document.getElementById('merk').value,
+        jenis: document.getElementById('jenis').value,
+        ukuran: parseInt(document.getElementById('ukuran').value),
+        harga: parseFloat(document.getElementById('harga').value),
+      };
+
+      if (!sepatu.merk || !sepatu.jenis || !sepatu.ukuran || !sepatu.harga) {
+        showError("Semua field harus diisi.");
+        return;
+      }
+
+      try {
+        if (id) {
+          await axios.put(`${API_URL}/${id}`, sepatu);
+        } else {
+          await axios.post(API_URL, sepatu);
+        }
+        loadSepatu();
+        closeForm();
+      } catch (error) {
+        showError("Gagal menyimpan data");
+      }
+    };
+
+    async function deleteSepatu(id) {
+      if (confirm("Apakah Anda yakin ingin menghapus sepatu ini?")) {
+        try {
+          await axios.delete(`${API_URL}/${id}`);
+          loadSepatu();
+        } catch (error) {
+          showError("Gagal menghapus data");
+        }
+      }
+    }
+
+    function editSepatu(id) {
+      openForm('Edit', id);
+    }
+  </script>
+</body>
+
+</html>
